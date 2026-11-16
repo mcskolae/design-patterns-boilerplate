@@ -8,6 +8,8 @@ interface LoanRepositoryInterface {
 
   /** @throws BookNotAvailableError */
   create(loan: NewLoan): Promise<Loan>;
+
+  update(loan: Loan): Promise<void>;
 }
 
 export default LoanRepositoryInterface;

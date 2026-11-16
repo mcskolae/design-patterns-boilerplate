@@ -1,3 +1,5 @@
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
 class Loan {
   private constructor(
     private readonly id: number,
@@ -20,6 +22,13 @@ class Loan {
     lateDays: number | null,
   ): Loan {
     return new Loan(id, userId, bookId, borrowedAt, dueAt, returnedAt, lateDays);
+  }
+
+  public markAsReturned(returnedAt: Date): Loan {
+    const overdueMilliseconds = returnedAt.getTime() - this.dueAt.getTime();
+    const lateDays = Math.max(0, Math.ceil(overdueMilliseconds / MILLISECONDS_PER_DAY));
+
+    return new Loan(this.id, this.userId, this.bookId, this.borrowedAt, this.dueAt, returnedAt, lateDays);
   }
 
   public isActive(): boolean {
