@@ -1,33 +1,44 @@
-import Loan from "../../domain/entities/Loan";
+import BookCopyNotFoundError from "../../domain/errors/BookCopyNotFoundError";
 import NoActiveLoanError from "../../domain/errors/NoActiveLoanError";
+import BookCopyRepositoryInterface from "../../domain/repositories/BookCopyRepositoryInterface";
 import LoanRepositoryInterface from "../../domain/repositories/LoanRepositoryInterface";
-import ClockInterface from "../../domain/services/ClockInterface";
+import BookCopyId from "../../domain/value-objects/BookCopyId";
+import { LoanDto, toLoanDto } from "../dto/LoanDto";
+import { ReturnBookCommand, ReturnBookUseCase } from "../ports/in/ReturnBookUseCase";
+import ClockInterface from "../ports/out/ClockInterface";
+import UnitOfWorkInterface from "../ports/out/UnitOfWorkInterface";
 
-export interface ReturnBookInput {
-  bookId: number;
-}
-
-class ReturnBook {
+class ReturnBook implements ReturnBookUseCase {
   public constructor(
+    private readonly bookCopyRepository: BookCopyRepositoryInterface,
     private readonly loanRepository: LoanRepositoryInterface,
     private readonly clock: ClockInterface,
+    private readonly unitOfWork: UnitOfWorkInterface,
   ) {
   }
 
-  /**
-   * @throws NoActiveLoanError
-   */
-  public async execute(input: ReturnBookInput): Promise<Loan> {
-    const activeLoan = await this.loanRepository.findActiveByBookId(input.bookId);
-    if (activeLoan === null) {
-      throw new NoActiveLoanError();
-    }
+  public async execute(command: ReturnBookCommand): Promise<LoanDto> {
+    const copyId = BookCopyId.from(command.copyId);
 
-    const returnedLoan = activeLoan.markAsReturned(this.clock.now());
+    return this.unitOfWork.run(async () => {
+      const copy = await this.bookCopyRepository.findById(copyId);
+      if (copy === null) {
+        throw new BookCopyNotFoundError(copyId);
+      }
 
-    await this.loanRepository.update(returnedLoan);
+      const loan = await this.loanRepository.findActiveByCopyId(copyId);
+      if (loan === null) {
+        throw new NoActiveLoanError(copyId);
+      }
 
-    return returnedLoan;
+      loan.markAsReturned(this.clock.now());
+      copy.giveBack();
+
+      await this.loanRepository.save(loan);
+      await this.bookCopyRepository.save(copy);
+
+      return toLoanDto(loan);
+    });
   }
 }
 

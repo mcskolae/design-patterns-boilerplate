@@ -1,59 +1,54 @@
-import Loan from "../../domain/entities/Loan";
-import NewLoan from "../../domain/entities/NewLoan";
-import BookNotAvailableError from "../../domain/errors/BookNotAvailableError";
-import BookNotFoundError from "../../domain/errors/BookNotFoundError";
-import LoanLimitReachedError from "../../domain/errors/LoanLimitReachedError";
-import UserNotFoundError from "../../domain/errors/UserNotFoundError";
-import BookRepositoryInterface from "../../domain/repositories/BookRepositoryInterface";
+import BookCopyNotFoundError from "../../domain/errors/BookCopyNotFoundError";
+import MemberNotFoundError from "../../domain/errors/MemberNotFoundError";
+import BookCopyRepositoryInterface from "../../domain/repositories/BookCopyRepositoryInterface";
 import LoanRepositoryInterface from "../../domain/repositories/LoanRepositoryInterface";
-import UserRepositoryInterface from "../../domain/repositories/UserRepositoryInterface";
-import { MAX_ACTIVE_LOANS } from "../../domain/rules/LoanRules";
-import ClockInterface from "../../domain/services/ClockInterface";
+import MemberRepositoryInterface from "../../domain/repositories/MemberRepositoryInterface";
+import LendingService from "../../domain/services/LendingService";
+import BookCopyId from "../../domain/value-objects/BookCopyId";
+import MemberId from "../../domain/value-objects/MemberId";
+import { LoanDto, toLoanDto } from "../dto/LoanDto";
+import { BorrowBookCommand, BorrowBookUseCase } from "../ports/in/BorrowBookUseCase";
+import ClockInterface from "../ports/out/ClockInterface";
+import UnitOfWorkInterface from "../ports/out/UnitOfWorkInterface";
 
-export interface BorrowBookInput {
-  userId: number;
-  bookId: number;
-}
-
-class BorrowBook {
+class BorrowBook implements BorrowBookUseCase {
   public constructor(
-    private readonly userRepository: UserRepositoryInterface,
-    private readonly bookRepository: BookRepositoryInterface,
+    private readonly memberRepository: MemberRepositoryInterface,
+    private readonly bookCopyRepository: BookCopyRepositoryInterface,
     private readonly loanRepository: LoanRepositoryInterface,
     private readonly clock: ClockInterface,
+    private readonly unitOfWork: UnitOfWorkInterface,
   ) {
   }
 
-  /**
-   * @throws UserNotFoundError
-   * @throws BookNotFoundError
-   * @throws LoanLimitReachedError
-   * @throws BookNotAvailableError
-   */
-  public async execute(input: BorrowBookInput): Promise<Loan> {
-    const user = await this.userRepository.findById(input.userId);
-    if (user === null) {
-      throw new UserNotFoundError();
-    }
+  public async execute(command: BorrowBookCommand): Promise<LoanDto> {
+    const memberId = MemberId.from(command.memberId);
+    const copyId = BookCopyId.from(command.copyId);
 
-    const book = await this.bookRepository.findById(input.bookId);
-    if (book === null) {
-      throw new BookNotFoundError();
-    }
+    return this.unitOfWork.run(async () => {
+      const member = await this.memberRepository.findById(memberId);
+      if (member === null) {
+        throw new MemberNotFoundError(memberId);
+      }
 
-    const activeLoans = await this.loanRepository.countActiveByUserId(user.getId());
-    if (activeLoans >= MAX_ACTIVE_LOANS) {
-      throw new LoanLimitReachedError();
-    }
+      const copy = await this.bookCopyRepository.findById(copyId);
+      if (copy === null) {
+        throw new BookCopyNotFoundError(copyId);
+      }
 
-    const activeLoan = await this.loanRepository.findActiveByBookId(book.getId());
-    if (activeLoan !== null) {
-      throw new BookNotAvailableError();
-    }
+      const loan = LendingService.lend({
+        loanId: await this.loanRepository.nextIdentity(),
+        member,
+        copy,
+        activeLoanCount: await this.loanRepository.countActiveByMemberId(memberId),
+        now: this.clock.now(),
+      });
 
-    const newLoan = NewLoan.new(user.getId(), book.getId(), this.clock.now());
+      await this.bookCopyRepository.save(copy);
+      await this.loanRepository.save(loan);
 
-    return this.loanRepository.create(newLoan);
+      return toLoanDto(loan);
+    });
   }
 }
 

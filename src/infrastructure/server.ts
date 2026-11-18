@@ -1,8 +1,9 @@
 import { createApp } from "./app";
 import { loadConfig } from "./config";
+import { createContainer } from "./container";
 
 const { port } = loadConfig();
-const server = createApp().listen(port, () => {
+const server = createApp(await createContainer()).listen(port, () => {
     console.log(`HTTP server listening on port ${port}`);
 });
 

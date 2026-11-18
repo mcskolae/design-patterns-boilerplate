@@ -1,15 +1,16 @@
 import Loan from "../entities/Loan";
-import NewLoan from "../entities/NewLoan";
+import BookCopyId from "../value-objects/BookCopyId";
+import LoanId from "../value-objects/LoanId";
+import MemberId from "../value-objects/MemberId";
 
 interface LoanRepositoryInterface {
-  countActiveByUserId(userId: number): Promise<number>;
+  nextIdentity(): Promise<LoanId>;
 
-  findActiveByBookId(bookId: number): Promise<Loan | null>;
+  countActiveByMemberId(memberId: MemberId): Promise<number>;
 
-  /** @throws BookNotAvailableError */
-  create(loan: NewLoan): Promise<Loan>;
+  findActiveByCopyId(copyId: BookCopyId): Promise<Loan | null>;
 
-  update(loan: Loan): Promise<void>;
+  save(loan: Loan): Promise<void>;
 }
 
 export default LoanRepositoryInterface;

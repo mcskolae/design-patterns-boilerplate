@@ -1,8 +1,9 @@
+import BookCopyId from "../value-objects/BookCopyId";
 import DomainError from "./DomainError";
 
 class NoActiveLoanError extends DomainError {
-  public constructor() {
-    super("No active loan for this book.");
+  public constructor(public readonly copyId: BookCopyId) {
+    super(`No active loan for book copy ${copyId.toString()}.`);
   }
 }
 
