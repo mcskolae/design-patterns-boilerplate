@@ -1,4 +1,4 @@
-import { LoanDto } from "../../dto/LoanDto";
+import { ActiveLoanDto } from "../../dto/LoanDto";
 
 export interface BorrowBookCommand {
   readonly memberId: number;
@@ -13,5 +13,5 @@ export interface BorrowBookUseCase {
    * @throws LoanLimitReachedError
    * @throws BookCopyNotAvailableError
    */
-  execute(command: BorrowBookCommand): Promise<LoanDto>;
+  execute(command: BorrowBookCommand): Promise<ActiveLoanDto>;
 }

@@ -1,11 +1,10 @@
 import InvalidReturnDateError from "../errors/InvalidReturnDateError";
 import LoanAlreadyReturnedError from "../errors/LoanAlreadyReturnedError";
-import { LOAN_DURATION_DAYS } from "../rules/LoanRules";
+import { computeDueDate } from "../rules/LoanRules";
 import BookCopyId from "../value-objects/BookCopyId";
 import LoanId from "../value-objects/LoanId";
+import LoanReturn from "../value-objects/LoanReturn";
 import MemberId from "../value-objects/MemberId";
-
-const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export interface LoanProps {
   readonly id: LoanId;
@@ -13,12 +12,7 @@ export interface LoanProps {
   readonly copyId: BookCopyId;
   readonly borrowedAt: Date;
   readonly dueAt: Date;
-  readonly returnedAt: Date | null;
-  readonly lateDays: number | null;
-}
-
-function utcDayNumber(date: Date): number {
-  return Math.floor(date.getTime() / MILLISECONDS_PER_DAY);
+  readonly loanReturn: LoanReturn | null;
 }
 
 function copyDate(date: Date): Date {
@@ -26,8 +20,7 @@ function copyDate(date: Date): Date {
 }
 
 class Loan {
-  private returnedAt: Date | null;
-  private lateDays: number | null;
+  private loanReturn: LoanReturn | null;
 
   private constructor(
     private readonly id: LoanId,
@@ -35,18 +28,13 @@ class Loan {
     private readonly copyId: BookCopyId,
     private readonly borrowedAt: Date,
     private readonly dueAt: Date,
-    returnedAt: Date | null,
-    lateDays: number | null,
+    loanReturn: LoanReturn | null,
   ) {
-    this.returnedAt = returnedAt;
-    this.lateDays = lateDays;
+    this.loanReturn = loanReturn;
   }
 
   public static start(id: LoanId, memberId: MemberId, copyId: BookCopyId, borrowedAt: Date): Loan {
-    const dueAt = copyDate(borrowedAt);
-    dueAt.setUTCDate(dueAt.getUTCDate() + LOAN_DURATION_DAYS);
-
-    return new Loan(id, memberId, copyId, copyDate(borrowedAt), dueAt, null, null);
+    return new Loan(id, memberId, copyId, copyDate(borrowedAt), computeDueDate(borrowedAt), null);
   }
 
   public static restore(props: LoanProps): Loan {
@@ -56,17 +44,16 @@ class Loan {
       props.copyId,
       copyDate(props.borrowedAt),
       copyDate(props.dueAt),
-      props.returnedAt === null ? null : copyDate(props.returnedAt),
-      props.lateDays,
+      props.loanReturn,
     );
   }
 
   /**
-   * @throws LoanAlreadyReturnedError si l'emprunt est déjà clôturé.
-   * @throws InvalidReturnDateError si `returnedAt` précède la date d'emprunt.
+   * @throws LoanAlreadyReturnedError
+   * @throws InvalidReturnDateError
    */
-  public markAsReturned(returnedAt: Date): void {
-    if (!this.isActive()) {
+  public markAsReturned(returnedAt: Date): LoanReturn {
+    if (this.loanReturn !== null) {
       throw new LoanAlreadyReturnedError(this.id);
     }
 
@@ -74,12 +61,13 @@ class Loan {
       throw new InvalidReturnDateError(this.id);
     }
 
-    this.returnedAt = copyDate(returnedAt);
-    this.lateDays = Math.max(0, utcDayNumber(returnedAt) - utcDayNumber(this.dueAt));
+    this.loanReturn = LoanReturn.record(returnedAt, this.dueAt);
+
+    return this.loanReturn;
   }
 
   public isActive(): boolean {
-    return this.returnedAt === null;
+    return this.loanReturn === null;
   }
 
   public getId(): LoanId {
@@ -102,12 +90,8 @@ class Loan {
     return copyDate(this.dueAt);
   }
 
-  public getReturnedAt(): Date | null {
-    return this.returnedAt === null ? null : copyDate(this.returnedAt);
-  }
-
-  public getLateDays(): number | null {
-    return this.lateDays;
+  public getReturn(): LoanReturn | null {
+    return this.loanReturn;
   }
 }
 

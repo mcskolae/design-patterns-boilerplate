@@ -6,7 +6,7 @@ import MemberRepositoryInterface from "../../domain/repositories/MemberRepositor
 import LendingService from "../../domain/services/LendingService";
 import BookCopyId from "../../domain/value-objects/BookCopyId";
 import MemberId from "../../domain/value-objects/MemberId";
-import { LoanDto, toLoanDto } from "../dto/LoanDto";
+import { ActiveLoanDto, toActiveLoanDto } from "../dto/LoanDto";
 import { BorrowBookCommand, BorrowBookUseCase } from "../ports/in/BorrowBookUseCase";
 import ClockInterface from "../ports/out/ClockInterface";
 import UnitOfWorkInterface from "../ports/out/UnitOfWorkInterface";
@@ -21,7 +21,7 @@ class BorrowBook implements BorrowBookUseCase {
   ) {
   }
 
-  public async execute(command: BorrowBookCommand): Promise<LoanDto> {
+  public async execute(command: BorrowBookCommand): Promise<ActiveLoanDto> {
     const memberId = MemberId.from(command.memberId);
     const copyId = BookCopyId.from(command.copyId);
 
@@ -40,14 +40,14 @@ class BorrowBook implements BorrowBookUseCase {
         loanId: await this.loanRepository.nextIdentity(),
         member,
         copy,
-        activeLoanCount: await this.loanRepository.countActiveByMemberId(memberId),
-        now: this.clock.now(),
+        activeLoanCountOfMember: await this.loanRepository.countActiveByMemberId(memberId),
+        borrowedAt: this.clock.now(),
       });
 
       await this.bookCopyRepository.save(copy);
       await this.loanRepository.save(loan);
 
-      return toLoanDto(loan);
+      return toActiveLoanDto(loan);
     });
   }
 }

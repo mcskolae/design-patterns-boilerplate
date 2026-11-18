@@ -2,6 +2,7 @@ import Loan from "../../../domain/entities/Loan";
 import LoanRepositoryInterface from "../../../domain/repositories/LoanRepositoryInterface";
 import BookCopyId from "../../../domain/value-objects/BookCopyId";
 import LoanId from "../../../domain/value-objects/LoanId";
+import LoanReturn from "../../../domain/value-objects/LoanReturn";
 import MemberId from "../../../domain/value-objects/MemberId";
 
 interface LoanRecord {
@@ -58,13 +59,14 @@ class InMemoryLoanRepository implements LoanRepositoryInterface {
       copyId: BookCopyId.from(record.copyId),
       borrowedAt: new Date(record.borrowedAt),
       dueAt: new Date(record.dueAt),
-      returnedAt: record.returnedAt === null ? null : new Date(record.returnedAt),
-      lateDays: record.lateDays,
+      loanReturn: record.returnedAt === null || record.lateDays === null
+        ? null
+        : LoanReturn.restore(new Date(record.returnedAt), record.lateDays),
     });
   }
 
   private static toRecord(loan: Loan): LoanRecord {
-    const returnedAt = loan.getReturnedAt();
+    const loanReturn = loan.getReturn();
 
     return {
       id: loan.getId().toNumber(),
@@ -72,8 +74,8 @@ class InMemoryLoanRepository implements LoanRepositoryInterface {
       copyId: loan.getCopyId().toNumber(),
       borrowedAt: loan.getBorrowedAt().toISOString(),
       dueAt: loan.getDueAt().toISOString(),
-      returnedAt: returnedAt === null ? null : returnedAt.toISOString(),
-      lateDays: loan.getLateDays(),
+      returnedAt: loanReturn === null ? null : loanReturn.getReturnedAt().toISOString(),
+      lateDays: loanReturn === null ? null : loanReturn.getLateDays(),
     };
   }
 }

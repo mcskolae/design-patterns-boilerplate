@@ -1,4 +1,6 @@
-# Exercice : conception d'une bibliothèque
+# Bibliothèque municipale
+
+Gestion des adhérents, des emprunts et des retours d'exemplaires. Architecture hexagonale, modèle de domaine DDD, TypeScript strict.
 
 ## Contexte métier
 
@@ -45,47 +47,98 @@ Pour le moment, nous n'appliquons aucune pénalité financière. Même en retard
 
 Si aucun emprunt en cours ne correspond à cet exemplaire, je veux être informé du problème sans modifier les données.
 
-## Objectif de l'exercice
+## Langage métier
 
-À partir de ce contexte, concevoir **trois use cases** correspondant aux trois situations décrites.
+| Métier | Code |
+| --- | --- |
+| Adhérent | `Member` |
+| Numéro d'adhérent | `MemberId` |
+| Exemplaire d'un livre | `BookCopy` |
+| Identifiant d'exemplaire | `BookCopyId` |
+| Emprunt | `Loan` |
+| Retour d'un emprunt | `LoanReturn` |
+| Inscription (situation 1) | `RegisterMember` |
+| Emprunt d'un exemplaire (situation 2) | `BorrowBook` |
+| Retour d'un exemplaire (situation 3) | `ReturnBook` |
 
-L'objectif n'est pas de produire le maximum de code, mais de **rendre le comportement métier suffisamment explicite pour qu'un modèle d'IA peu puissant puisse implémenter chaque use case sans devoir inventer les règles manquantes**.
+## Règles métier
 
-Le professeur pourra sélectionner la définition d'un use case et demander à une IA de l'implémenter à partir du contexte accessible dans le projet.
+Les règles chiffrées sont centralisées dans `src/domain/rules/LoanRules.ts`.
 
-## Travail demandé
+| Règle | Implémentation |
+| --- | --- |
+| Email valide, unique, comparé en minuscules sans espaces de bord | `Email`, `RegisterMember` |
+| Nom et prénom non vides, casse conservée | `LastName`, `FirstName` |
+| Au plus 3 emprunts en cours : le 4e est refusé | `MAX_ACTIVE_LOANS`, `hasReachedActiveLoanLimit` |
+| Un exemplaire n'est emprunté que par une personne à la fois | `BookCopy.lend` |
+| Retour prévu 14 jours après l'emprunt, à la même heure | `LOAN_DURATION_DAYS`, `computeDueDate` |
+| Jours de retard : jours calendaires UTC après la date prévue, 0 si rendu le jour prévu | `countLateCalendarDays` |
+| Un retour est toujours accepté, sans pénalité | `Loan.markAsReturned` |
+| Un refus ne modifie aucune donnée | `UnitOfWorkInterface`, vérifications avant écritures |
 
-1. Identifier les entités et leurs responsabilités à partir du récit.
-2. Définir les types, les ports et les règles métier nécessaires.
-3. Déclarer les trois use cases et leurs contrats explicites.
-4. Prévoir les cas nominaux, les cas limites et les refus métier.
-5. Vérifier que les définitions fournissent à l'IA toutes les informations nécessaires pour implémenter chaque use case.
+## Architecture
 
-La manière d'exprimer les contraintes métier et de structurer les abstractions est libre. Vous pouvez créer les outils et dossiers qui vous semblent nécessaires.
+```
+src/
+├── domain/                      Modèle métier, sans dépendance technique
+│   ├── entities/                Agrégats : Member, BookCopy, Loan
+│   ├── value-objects/           MemberId, BookCopyId, LoanId, Email, FirstName, LastName, LoanReturn
+│   ├── rules/                   Constantes et calculs métier
+│   ├── services/                LendingService : règles d'emprunt entre plusieurs agrégats
+│   ├── repositories/            Ports de persistance
+│   └── errors/                  Refus métier, tous dérivés de DomainError
+├── application/                 Orchestration des use cases
+│   ├── ports/in/                Contrats des use cases : commande, résultat, erreurs
+│   ├── ports/out/               ClockInterface, UnitOfWorkInterface
+│   ├── dto/                     Résultats exposés : MemberDto, ActiveLoanDto, ReturnedLoanDto
+│   └── use-cases/               RegisterMember, BorrowBook, ReturnBook
+└── infrastructure/              Adapters
+    ├── http/                    Routes Express et traduction des erreurs en statuts HTTP
+    ├── persistence/in-memory/   Repositories et UnitOfWork en mémoire
+    ├── clock/                   SystemClock
+    ├── container.ts             Composition root
+    └── server.ts                Point d'entrée
+```
 
-### Contrat attendu pour chaque use case
+Sens des dépendances : `infrastructure` → `application` → `domain`. Le domaine n'importe rien en dehors de lui-même.
 
-L'IA doit pouvoir déterminer sans interprétation :
+## Use cases
 
-- Les entrées, leur signification et leurs types.
-- Les préconditions et les règles métier exactes.
-- Les données à consulter et les modifications d'état à effectuer.
-- Les dépendances nécessaires, définies via des ports.
-- Les valeurs de retour et les différents cas d'échec.
-- Le comportement attendu dans les cas limites.
+Chaque use case :
 
-Exprimez ces informations autant que possible dans les types, les signatures et les commentaires proches du code concerné.
+- reçoit une commande en types primitifs ;
+- la convertit en value objects ;
+- s'exécute dans `UnitOfWorkInterface.run` ;
+- renvoie un DTO, jamais une entité.
 
-**Les ambiguïtés laissées dans les contrats font partie de l'évaluation.**
+| Use case | Contrat | Commande | Résultat | Erreurs, dans l'ordre de vérification |
+| --- | --- | --- | --- | --- |
+| `RegisterMember` | `RegisterMemberUseCase` | `email`, `lastName`, `firstName` | `MemberDto` | `InvalidEmailError`, `InvalidLastNameError`, `InvalidFirstNameError`, `EmailAlreadyExistsError` |
+| `BorrowBook` | `BorrowBookUseCase` | `memberId`, `copyId` | `ActiveLoanDto` | `InvalidIdentifierError`, `MemberNotFoundError`, `BookCopyNotFoundError`, `LoanLimitReachedError`, `BookCopyNotAvailableError` |
+| `ReturnBook` | `ReturnBookUseCase` | `copyId` | `ReturnedLoanDto` | `InvalidIdentifierError`, `BookCopyNotFoundError`, `NoActiveLoanError` |
 
-## Structure de départ
+`ReturnBook` peut aussi propager `LoanAlreadyReturnedError` et `InvalidReturnDateError`, deux invariants de `Loan`. Ils ne se déclenchent pas dans un fonctionnement normal.
 
-- `src/domains/entities/` : entités métier.
-- `src/domains/repositories/` : ports de persistance.
-- `src/domains/useCase/` : points d'entrée métier.
-- `src/infrastructure/` : serveur Express et implémentations techniques.
+## API HTTP
 
-Vous pouvez ajouter les fichiers et dossiers nécessaires à votre conception.
+| Méthode | Route | Corps JSON | Succès |
+| --- | --- | --- | --- |
+| `GET` | `/health` | | `200` |
+| `POST` | `/members` | `{ "email": string, "lastName": string, "firstName": string }` | `201` `MemberDto` |
+| `POST` | `/loans` | `{ "memberId": number, "copyId": number }` | `201` `ActiveLoanDto` |
+| `POST` | `/returns` | `{ "copyId": number }` | `200` `ReturnedLoanDto` |
+
+Erreurs, au format `{ "error": string, "message": string }` :
+
+| Statut | Cas |
+| --- | --- |
+| `400` | Corps mal formé, email, nom, prénom ou identifiant invalide |
+| `404` | Adhérent ou exemplaire inconnu |
+| `409` | Email déjà inscrit, exemplaire indisponible, aucun emprunt en cours, emprunt déjà rendu |
+| `422` | Limite d'emprunts atteinte, autre refus métier |
+| `500` | Erreur technique |
+
+La persistance est en mémoire. Les exemplaires `1` à `5` sont créés au démarrage, car aucun use case ne crée d'exemplaire.
 
 ## Démarrage
 
@@ -94,4 +147,4 @@ pnpm install
 pnpm dev
 ```
 
-Le serveur Express expose `GET /health`. Utilisez `pnpm typecheck` pour vérifier le typage.
+Vérification du typage : `pnpm typecheck`.

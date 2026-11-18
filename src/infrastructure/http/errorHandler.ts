@@ -7,6 +7,7 @@ import InvalidEmailError from "../../domain/errors/InvalidEmailError";
 import InvalidFirstNameError from "../../domain/errors/InvalidFirstNameError";
 import InvalidIdentifierError from "../../domain/errors/InvalidIdentifierError";
 import InvalidLastNameError from "../../domain/errors/InvalidLastNameError";
+import LoanAlreadyReturnedError from "../../domain/errors/LoanAlreadyReturnedError";
 import MemberNotFoundError from "../../domain/errors/MemberNotFoundError";
 import NoActiveLoanError from "../../domain/errors/NoActiveLoanError";
 import BadRequestError from "./BadRequestError";
@@ -29,6 +30,7 @@ function statusOf(error: DomainError): number {
     error instanceof EmailAlreadyExistsError
     || error instanceof BookCopyNotAvailableError
     || error instanceof NoActiveLoanError
+    || error instanceof LoanAlreadyReturnedError
   ) {
     return 409;
   }
