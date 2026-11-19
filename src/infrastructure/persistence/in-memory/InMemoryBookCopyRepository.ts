@@ -10,6 +10,12 @@ interface BookCopyRecord {
 export class InMemoryBookCopyRepository implements BookCopyRepositoryInterface {
   private readonly records = new Map<number, BookCopyRecord>();
 
+  public constructor(initialCopies: readonly BookCopy[] = []) {
+    for (const copy of initialCopies) {
+      this.records.set(copy.getId().toNumber(), { id: copy.getId().toNumber(), available: copy.isAvailable() });
+    }
+  }
+
   public async findById(id: BookCopyId): Promise<BookCopy | null> {
     const record = this.records.get(id.toNumber());
 

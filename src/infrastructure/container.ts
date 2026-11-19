@@ -1,3 +1,5 @@
+import { BookCopy } from "../domain/entities/BookCopy";
+import { BookCopyId } from "../domain/value-objects/BookCopyId";
 import { BorrowBook } from "../application/use-cases/BorrowBook";
 import { RegisterMember } from "../application/use-cases/RegisterMember";
 import { ReturnBook } from "../application/use-cases/ReturnBook";
@@ -6,9 +8,17 @@ import { InMemoryBookCopyRepository } from "./persistence/in-memory/InMemoryBook
 import { InMemoryLoanRepository } from "./persistence/in-memory/InMemoryLoanRepository";
 import { InMemoryMemberRepository } from "./persistence/in-memory/InMemoryMemberRepository";
 
+const INITIAL_BOOK_COPY_COUNT = 5;
+
+function initialBookCopies(): BookCopy[] {
+    return Array.from({ length: INITIAL_BOOK_COPY_COUNT }, (_, index) =>
+        BookCopy.restore({ id: BookCopyId.from(index + 1), available: true }),
+    );
+}
+
 export function createContainer() {
     const memberRepository = new InMemoryMemberRepository();
-    const bookCopyRepository = new InMemoryBookCopyRepository();
+    const bookCopyRepository = new InMemoryBookCopyRepository(initialBookCopies());
     const loanRepository = new InMemoryLoanRepository();
     const clock = new SystemClock();
 

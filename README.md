@@ -136,7 +136,7 @@ Erreurs, au format `{ "error": string, "message": string }` :
 | `422` | Limite d'emprunts atteinte, autre refus métier |
 | `500` | Erreur technique |
 
-La persistance est en mémoire et démarre vide. Aucun use case ne crée d'exemplaire : pour tester un emprunt, enregistrer d'abord un `BookCopy` dans `InMemoryBookCopyRepository`.
+La persistance est en mémoire. Aucun use case ne crée d'exemplaire : au démarrage, `container.ts` enregistre les exemplaires `1` à `5`, tous disponibles. Les adhérents et les emprunts démarrent vides.
 
 ## Démarrage
 
