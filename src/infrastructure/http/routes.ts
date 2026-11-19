@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
-import type { BorrowBook } from "../../application/use-cases/BorrowBook";
-import type { RegisterMember } from "../../application/use-cases/RegisterMember";
-import type { ReturnBook } from "../../application/use-cases/ReturnBook";
+import type { BorrowBook } from "../../application/use-cases/BorrowBook/BorrowBook";
+import type { RegisterMember } from "../../application/use-cases/RegisterMember/RegisterMember";
+import type { ReturnBook } from "../../application/use-cases/ReturnBook/ReturnBook";
 import { BadRequestError } from "./errorHandler";
 import { normalizeActiveLoan, normalizeMember, normalizeReturnedLoan } from "./normalizers";
 

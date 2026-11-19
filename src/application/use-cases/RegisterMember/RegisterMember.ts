@@ -1,14 +1,9 @@
-import { Member } from "../../domain/entities/Member";
-import { EmailAlreadyExistsError } from "../../domain/errors/EmailAlreadyExistsError";
-import { MemberRepositoryInterface } from "../../domain/repositories/MemberRepositoryInterface";
-import { Email } from "../../domain/value-objects/Email";
-import { MemberDto, toMemberDto } from "../dto/MemberDto";
-
-export interface RegisterMemberCommand {
-  readonly email: string;
-  readonly lastName: string;
-  readonly firstName: string;
-}
+import { Member } from "../../../domain/entities/Member";
+import { EmailAlreadyExistsError } from "../../../domain/errors/EmailAlreadyExistsError";
+import { MemberRepositoryInterface } from "../../../domain/repositories/MemberRepositoryInterface";
+import { Email } from "../../../domain/value-objects/Email";
+import { RegisterMemberCommand } from "./RegisterMemberCommand";
+import { RegisterMemberResult, toRegisterMemberResult } from "./RegisterMemberResult";
 
 export class RegisterMember {
   public constructor(
@@ -22,7 +17,7 @@ export class RegisterMember {
    * @throws InvalidLastNameError
    * @throws InvalidFirstNameError
    */
-  public async execute(command: RegisterMemberCommand): Promise<MemberDto> {
+  public async execute(command: RegisterMemberCommand): Promise<RegisterMemberResult> {
     const email = Email.from(command.email);
 
     if (await this.memberRepository.findByEmail(email) !== null) {
@@ -38,6 +33,6 @@ export class RegisterMember {
 
     await this.memberRepository.save(member);
 
-    return toMemberDto(member);
+    return toRegisterMemberResult(member);
   }
 }

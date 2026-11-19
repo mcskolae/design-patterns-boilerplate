@@ -1,14 +1,11 @@
-import { BookCopyNotFoundError } from "../../domain/errors/BookCopyNotFoundError";
-import { NoActiveLoanError } from "../../domain/errors/NoActiveLoanError";
-import { BookCopyRepositoryInterface } from "../../domain/repositories/BookCopyRepositoryInterface";
-import { LoanRepositoryInterface } from "../../domain/repositories/LoanRepositoryInterface";
-import { BookCopyId } from "../../domain/value-objects/BookCopyId";
-import { ReturnedLoanDto, toReturnedLoanDto } from "../dto/LoanDto";
-import { ClockInterface } from "../ports/ClockInterface";
-
-export interface ReturnBookCommand {
-  readonly copyId: number;
-}
+import { BookCopyNotFoundError } from "../../../domain/errors/BookCopyNotFoundError";
+import { NoActiveLoanError } from "../../../domain/errors/NoActiveLoanError";
+import { BookCopyRepositoryInterface } from "../../../domain/repositories/BookCopyRepositoryInterface";
+import { LoanRepositoryInterface } from "../../../domain/repositories/LoanRepositoryInterface";
+import { BookCopyId } from "../../../domain/value-objects/BookCopyId";
+import { ClockInterface } from "../../ports/ClockInterface";
+import { ReturnBookCommand } from "./ReturnBookCommand";
+import { ReturnBookResult, toReturnBookResult } from "./ReturnBookResult";
 
 export class ReturnBook {
   public constructor(
@@ -23,7 +20,7 @@ export class ReturnBook {
    * @throws BookCopyNotFoundError
    * @throws NoActiveLoanError
    */
-  public async execute(command: ReturnBookCommand): Promise<ReturnedLoanDto> {
+  public async execute(command: ReturnBookCommand): Promise<ReturnBookResult> {
     const copyId = BookCopyId.from(command.copyId);
 
     const copy = await this.bookCopyRepository.findById(copyId);
@@ -42,6 +39,6 @@ export class ReturnBook {
     await this.loanRepository.save(loan);
     await this.bookCopyRepository.save(copy);
 
-    return toReturnedLoanDto(loan, loanReturn);
+    return toReturnBookResult(loan, loanReturn);
   }
 }

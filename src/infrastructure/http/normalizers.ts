@@ -1,5 +1,6 @@
-import type { ActiveLoanDto, ReturnedLoanDto } from "../../application/dto/LoanDto";
-import type { MemberDto } from "../../application/dto/MemberDto";
+import type { BorrowBookResult } from "../../application/use-cases/BorrowBook/BorrowBookResult";
+import type { RegisterMemberResult } from "../../application/use-cases/RegisterMember/RegisterMemberResult";
+import type { ReturnBookResult } from "../../application/use-cases/ReturnBook/ReturnBookResult";
 
 export interface MemberResponse {
   readonly id: number;
@@ -28,7 +29,7 @@ export interface ReturnedLoanResponse {
   readonly late_days: number;
 }
 
-export function normalizeMember(member: MemberDto): MemberResponse {
+export function normalizeMember(member: RegisterMemberResult): MemberResponse {
   return {
     id: member.id,
     email: member.email,
@@ -37,7 +38,7 @@ export function normalizeMember(member: MemberDto): MemberResponse {
   };
 }
 
-export function normalizeActiveLoan(loan: ActiveLoanDto): ActiveLoanResponse {
+export function normalizeActiveLoan(loan: BorrowBookResult): ActiveLoanResponse {
   return {
     id: loan.id,
     member_id: loan.memberId,
@@ -48,7 +49,7 @@ export function normalizeActiveLoan(loan: ActiveLoanDto): ActiveLoanResponse {
   };
 }
 
-export function normalizeReturnedLoan(loan: ReturnedLoanDto): ReturnedLoanResponse {
+export function normalizeReturnedLoan(loan: ReturnBookResult): ReturnedLoanResponse {
   return {
     id: loan.id,
     member_id: loan.memberId,

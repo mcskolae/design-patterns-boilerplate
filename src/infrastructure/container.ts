@@ -1,8 +1,8 @@
 import { BookCopy } from "../domain/entities/BookCopy";
 import { BookCopyId } from "../domain/value-objects/BookCopyId";
-import { BorrowBook } from "../application/use-cases/BorrowBook";
-import { RegisterMember } from "../application/use-cases/RegisterMember";
-import { ReturnBook } from "../application/use-cases/ReturnBook";
+import { BorrowBook } from "../application/use-cases/BorrowBook/BorrowBook";
+import { RegisterMember } from "../application/use-cases/RegisterMember/RegisterMember";
+import { ReturnBook } from "../application/use-cases/ReturnBook/ReturnBook";
 import { SystemClock } from "./clock/SystemClock";
 import { InMemoryBookCopyRepository } from "./persistence/in-memory/InMemoryBookCopyRepository";
 import { InMemoryLoanRepository } from "./persistence/in-memory/InMemoryLoanRepository";

@@ -1,19 +1,15 @@
-import { Loan } from "../../domain/entities/Loan";
-import { BookCopyNotFoundError } from "../../domain/errors/BookCopyNotFoundError";
-import { MemberNotFoundError } from "../../domain/errors/MemberNotFoundError";
-import { BookCopyRepositoryInterface } from "../../domain/repositories/BookCopyRepositoryInterface";
-import { LoanRepositoryInterface } from "../../domain/repositories/LoanRepositoryInterface";
-import { MemberRepositoryInterface } from "../../domain/repositories/MemberRepositoryInterface";
-import { ensureActiveLoanLimitNotReached } from "../../domain/rules/LoanRules";
-import { BookCopyId } from "../../domain/value-objects/BookCopyId";
-import { MemberId } from "../../domain/value-objects/MemberId";
-import { ActiveLoanDto, toActiveLoanDto } from "../dto/LoanDto";
-import { ClockInterface } from "../ports/ClockInterface";
-
-export interface BorrowBookCommand {
-  readonly memberId: number;
-  readonly copyId: number;
-}
+import { Loan } from "../../../domain/entities/Loan";
+import { BookCopyNotFoundError } from "../../../domain/errors/BookCopyNotFoundError";
+import { MemberNotFoundError } from "../../../domain/errors/MemberNotFoundError";
+import { BookCopyRepositoryInterface } from "../../../domain/repositories/BookCopyRepositoryInterface";
+import { LoanRepositoryInterface } from "../../../domain/repositories/LoanRepositoryInterface";
+import { MemberRepositoryInterface } from "../../../domain/repositories/MemberRepositoryInterface";
+import { ensureActiveLoanLimitNotReached } from "../../../domain/rules/LoanRules";
+import { BookCopyId } from "../../../domain/value-objects/BookCopyId";
+import { MemberId } from "../../../domain/value-objects/MemberId";
+import { ClockInterface } from "../../ports/ClockInterface";
+import { BorrowBookCommand } from "./BorrowBookCommand";
+import { BorrowBookResult, toBorrowBookResult } from "./BorrowBookResult";
 
 export class BorrowBook {
   public constructor(
@@ -31,7 +27,7 @@ export class BorrowBook {
    * @throws LoanLimitReachedError
    * @throws BookCopyNotAvailableError
    */
-  public async execute(command: BorrowBookCommand): Promise<ActiveLoanDto> {
+  public async execute(command: BorrowBookCommand): Promise<BorrowBookResult> {
     const memberId = MemberId.from(command.memberId);
     const copyId = BookCopyId.from(command.copyId);
 
@@ -53,6 +49,6 @@ export class BorrowBook {
     await this.bookCopyRepository.save(copy);
     await this.loanRepository.save(loan);
 
-    return toActiveLoanDto(loan);
+    return toBorrowBookResult(loan);
   }
 }

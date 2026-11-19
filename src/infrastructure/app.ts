@@ -1,7 +1,7 @@
 import express, { type Express } from "express";
-import type { BorrowBook } from "../application/use-cases/BorrowBook";
-import type { RegisterMember } from "../application/use-cases/RegisterMember";
-import type { ReturnBook } from "../application/use-cases/ReturnBook";
+import type { BorrowBook } from "../application/use-cases/BorrowBook/BorrowBook";
+import type { RegisterMember } from "../application/use-cases/RegisterMember/RegisterMember";
+import type { ReturnBook } from "../application/use-cases/ReturnBook/ReturnBook";
 import { errorHandler } from "./http/errorHandler";
 import { createRoutes } from "./http/routes";
 

@@ -1,13 +1,13 @@
-import { Member } from "../../domain/entities/Member";
+import { Member } from "../../../domain/entities/Member";
 
-export interface MemberDto {
+export interface RegisterMemberResult {
   readonly id: number;
   readonly email: string;
   readonly lastName: string;
   readonly firstName: string;
 }
 
-export function toMemberDto(member: Member): MemberDto {
+export function toRegisterMemberResult(member: Member): RegisterMemberResult {
   return {
     id: member.getId().toNumber(),
     email: member.getEmail().toString(),

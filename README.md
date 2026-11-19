@@ -88,8 +88,7 @@ src/
 │   └── errors/                  Refus métier, tous dérivés de DomainError
 ├── application/                 Orchestration des use cases
 │   ├── ports/                   ClockInterface
-│   ├── dto/                     Résultats exposés : MemberDto, ActiveLoanDto, ReturnedLoanDto
-│   └── use-cases/               RegisterMember, BorrowBook, ReturnBook : commande, erreurs, orchestration
+│   └── use-cases/               Un dossier par use case : orchestration, Command (entrée), Result (sortie)
 └── infrastructure/              Adapters
     ├── http/                    Routes Express, validation des corps, normalizers snake_case, erreurs HTTP
     ├── persistence/in-memory/   Repositories en mémoire
@@ -111,9 +110,9 @@ Chaque use case :
 
 | Use case | Commande | Résultat | Erreurs, dans l'ordre de vérification |
 | --- | --- | --- | --- |
-| `RegisterMember` | `email`, `lastName`, `firstName` | `MemberDto` | `InvalidEmailError`, `EmailAlreadyExistsError`, `InvalidLastNameError`, `InvalidFirstNameError` |
-| `BorrowBook` | `memberId`, `copyId` | `ActiveLoanDto` | `InvalidIdentifierError`, `MemberNotFoundError`, `BookCopyNotFoundError`, `LoanLimitReachedError`, `BookCopyNotAvailableError` |
-| `ReturnBook` | `copyId` | `ReturnedLoanDto` | `InvalidIdentifierError`, `BookCopyNotFoundError`, `NoActiveLoanError` |
+| `RegisterMember` | `email`, `lastName`, `firstName` | `RegisterMemberResult` | `InvalidEmailError`, `EmailAlreadyExistsError`, `InvalidLastNameError`, `InvalidFirstNameError` |
+| `BorrowBook` | `memberId`, `copyId` | `BorrowBookResult` | `InvalidIdentifierError`, `MemberNotFoundError`, `BookCopyNotFoundError`, `LoanLimitReachedError`, `BookCopyNotAvailableError` |
+| `ReturnBook` | `copyId` | `ReturnBookResult` | `InvalidIdentifierError`, `BookCopyNotFoundError`, `NoActiveLoanError` |
 
 ## API HTTP
 
