@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request, type Response } from "express";
 import type { BorrowBook } from "../../application/use-cases/BorrowBook";
 import type { RegisterMember } from "../../application/use-cases/RegisterMember";
 import type { ReturnBook } from "../../application/use-cases/ReturnBook";
@@ -36,7 +36,7 @@ function readNumber(body: unknown, field: string): number {
 export function createRoutes(registerMember: RegisterMember, borrowBook: BorrowBook, returnBook: ReturnBook): Router {
   const router = Router();
 
-  router.post("/members", async (request, response) => {
+  router.post("/members", async (request: Request, response: Response) => {
     const member = await registerMember.execute({
       email: readString(request.body, "email"),
       lastName: readString(request.body, "last_name"),
@@ -46,7 +46,7 @@ export function createRoutes(registerMember: RegisterMember, borrowBook: BorrowB
     response.status(201).json(normalizeMember(member));
   });
 
-  router.post("/loans", async (request, response) => {
+  router.post("/loans", async (request: Request, response: Response) => {
     const loan = await borrowBook.execute({
       memberId: readNumber(request.body, "member_id"),
       copyId: readNumber(request.body, "copy_id"),
@@ -55,7 +55,7 @@ export function createRoutes(registerMember: RegisterMember, borrowBook: BorrowB
     response.status(201).json(normalizeActiveLoan(loan));
   });
 
-  router.post("/returns", async (request, response) => {
+  router.post("/returns", async (request: Request, response: Response) => {
     const loan = await returnBook.execute({
       copyId: readNumber(request.body, "copy_id"),
     });
