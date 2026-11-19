@@ -1,23 +1,10 @@
-import { InvalidIdentifierError } from "../errors/InvalidIdentifierError";
+import { NumericId } from "./NumericId";
 
-export class MemberId {
-  private constructor(private readonly value: number) {
-  }
+export class MemberId extends NumericId {
+  private readonly kind = "MemberId";
 
   /** @throws InvalidIdentifierError */
   public static from(value: number): MemberId {
-    if (!Number.isInteger(value) || value <= 0) {
-      throw new InvalidIdentifierError("MemberId", value);
-    }
-
-    return new MemberId(value);
-  }
-
-  public toNumber(): number {
-    return this.value;
-  }
-
-  public toString(): string {
-    return String(this.value);
+    return new MemberId(NumericId.ensureValid("MemberId", value));
   }
 }
