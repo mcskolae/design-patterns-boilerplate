@@ -1,43 +1,66 @@
 import { Router } from "express";
-import { BorrowBookUseCase } from "../../application/ports/in/BorrowBookUseCase";
-import { RegisterMemberUseCase } from "../../application/ports/in/RegisterMemberUseCase";
-import { ReturnBookUseCase } from "../../application/ports/in/ReturnBookUseCase";
-import { readNumber, readString } from "./requestBody";
+import type { BorrowBook } from "../../application/use-cases/BorrowBook";
+import type { RegisterMember } from "../../application/use-cases/RegisterMember";
+import type { ReturnBook } from "../../application/use-cases/ReturnBook";
+import { BadRequestError } from "./errorHandler";
+import { normalizeActiveLoan, normalizeMember, normalizeReturnedLoan } from "./normalizers";
 
-export interface UseCases {
-  readonly registerMember: RegisterMemberUseCase;
-  readonly borrowBook: BorrowBookUseCase;
-  readonly returnBook: ReturnBookUseCase;
+function asObject(body: unknown): Record<string, unknown> {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    throw new BadRequestError("Request body must be a JSON object.");
+  }
+
+  return body as Record<string, unknown>;
 }
 
-export function createRoutes(useCases: UseCases): Router {
+function readString(body: unknown, field: string): string {
+  const value = asObject(body)[field];
+
+  if (typeof value !== "string") {
+    throw new BadRequestError(`Field "${field}" must be a string.`);
+  }
+
+  return value;
+}
+
+function readNumber(body: unknown, field: string): number {
+  const value = asObject(body)[field];
+
+  if (typeof value !== "number") {
+    throw new BadRequestError(`Field "${field}" must be a number.`);
+  }
+
+  return value;
+}
+
+export function createRoutes(registerMember: RegisterMember, borrowBook: BorrowBook, returnBook: ReturnBook): Router {
   const router = Router();
 
   router.post("/members", async (request, response) => {
-    const member = await useCases.registerMember.execute({
+    const member = await registerMember.execute({
       email: readString(request.body, "email"),
-      lastName: readString(request.body, "lastName"),
-      firstName: readString(request.body, "firstName"),
+      lastName: readString(request.body, "last_name"),
+      firstName: readString(request.body, "first_name"),
     });
 
-    response.status(201).json(member);
+    response.status(201).json(normalizeMember(member));
   });
 
   router.post("/loans", async (request, response) => {
-    const loan = await useCases.borrowBook.execute({
-      memberId: readNumber(request.body, "memberId"),
-      copyId: readNumber(request.body, "copyId"),
+    const loan = await borrowBook.execute({
+      memberId: readNumber(request.body, "member_id"),
+      copyId: readNumber(request.body, "copy_id"),
     });
 
-    response.status(201).json(loan);
+    response.status(201).json(normalizeActiveLoan(loan));
   });
 
   router.post("/returns", async (request, response) => {
-    const loan = await useCases.returnBook.execute({
-      copyId: readNumber(request.body, "copyId"),
+    const loan = await returnBook.execute({
+      copyId: readNumber(request.body, "copy_id"),
     });
 
-    response.status(200).json(loan);
+    response.status(200).json(normalizeReturnedLoan(loan));
   });
 
   return router;

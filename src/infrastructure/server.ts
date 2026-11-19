@@ -2,8 +2,11 @@ import { createApp } from "./app";
 import { loadConfig } from "./config";
 import { createContainer } from "./container";
 
+const { registerMember, borrowBook, returnBook } = createContainer();
+const app = createApp(registerMember, borrowBook, returnBook);
+
 const { port } = loadConfig();
-const server = createApp(await createContainer()).listen(port, () => {
+const server = app.listen(port, () => {
     console.log(`HTTP server listening on port ${port}`);
 });
 

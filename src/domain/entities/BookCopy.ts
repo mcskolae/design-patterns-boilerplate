@@ -1,12 +1,12 @@
-import BookCopyNotAvailableError from "../errors/BookCopyNotAvailableError";
-import BookCopyId from "../value-objects/BookCopyId";
+import { BookCopyNotAvailableError } from "../errors/BookCopyNotAvailableError";
+import { BookCopyId } from "../value-objects/BookCopyId";
 
 export interface BookCopyProps {
   readonly id: BookCopyId;
   readonly available: boolean;
 }
 
-class BookCopy {
+export class BookCopy {
   private available: boolean;
 
   private constructor(private readonly id: BookCopyId, available: boolean) {
@@ -17,7 +17,7 @@ class BookCopy {
     return new BookCopy(props.id, props.available);
   }
 
-  /** @throws BookCopyNotAvailableError si l'exemplaire est déjà emprunté. */
+  /** @throws BookCopyNotAvailableError */
   public lend(): void {
     if (!this.available) {
       throw new BookCopyNotAvailableError(this.id);
@@ -38,5 +38,3 @@ class BookCopy {
     return this.available;
   }
 }
-
-export default BookCopy;

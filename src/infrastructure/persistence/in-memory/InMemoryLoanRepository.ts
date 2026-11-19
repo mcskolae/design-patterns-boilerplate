@@ -1,9 +1,9 @@
-import Loan from "../../../domain/entities/Loan";
-import LoanRepositoryInterface from "../../../domain/repositories/LoanRepositoryInterface";
-import BookCopyId from "../../../domain/value-objects/BookCopyId";
-import LoanId from "../../../domain/value-objects/LoanId";
-import LoanReturn from "../../../domain/value-objects/LoanReturn";
-import MemberId from "../../../domain/value-objects/MemberId";
+import { Loan } from "../../../domain/entities/Loan";
+import { LoanRepositoryInterface } from "../../../domain/repositories/LoanRepositoryInterface";
+import { BookCopyId } from "../../../domain/value-objects/BookCopyId";
+import { LoanId } from "../../../domain/value-objects/LoanId";
+import { LoanReturn } from "../../../domain/value-objects/LoanReturn";
+import { MemberId } from "../../../domain/value-objects/MemberId";
 
 interface LoanRecord {
   readonly id: number;
@@ -15,7 +15,7 @@ interface LoanRecord {
   readonly lateDays: number | null;
 }
 
-class InMemoryLoanRepository implements LoanRepositoryInterface {
+export class InMemoryLoanRepository implements LoanRepositoryInterface {
   private readonly records = new Map<number, LoanRecord>();
   private lastId = 0;
 
@@ -79,5 +79,3 @@ class InMemoryLoanRepository implements LoanRepositoryInterface {
     };
   }
 }
-
-export default InMemoryLoanRepository;

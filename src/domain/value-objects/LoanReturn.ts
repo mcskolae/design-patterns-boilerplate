@@ -1,6 +1,6 @@
 import { countLateCalendarDays } from "../rules/LoanRules";
 
-class LoanReturn {
+export class LoanReturn {
   private constructor(
     private readonly returnedAt: Date,
     private readonly lateDays: number,
@@ -22,10 +22,4 @@ class LoanReturn {
   public getLateDays(): number {
     return this.lateDays;
   }
-
-  public isLate(): boolean {
-    return this.lateDays > 0;
-  }
 }
-
-export default LoanReturn;

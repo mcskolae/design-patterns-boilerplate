@@ -68,13 +68,13 @@ Les règles chiffrées sont centralisées dans `src/domain/rules/LoanRules.ts`.
 | Règle | Implémentation |
 | --- | --- |
 | Email valide, unique, comparé en minuscules sans espaces de bord | `Email`, `RegisterMember` |
-| Nom et prénom non vides, casse conservée | `LastName`, `FirstName` |
-| Au plus 3 emprunts en cours : le 4e est refusé | `MAX_ACTIVE_LOANS`, `hasReachedActiveLoanLimit` |
+| Nom et prénom non vides après suppression des espaces de bord, casse conservée | `Member.register` |
+| Au plus 3 emprunts en cours : le 4e est refusé | `MAX_ACTIVE_LOANS`, `ensureActiveLoanLimitNotReached` |
 | Un exemplaire n'est emprunté que par une personne à la fois | `BookCopy.lend` |
 | Retour prévu 14 jours après l'emprunt, à la même heure | `LOAN_DURATION_DAYS`, `computeDueDate` |
 | Jours de retard : jours calendaires UTC après la date prévue, 0 si rendu le jour prévu | `countLateCalendarDays` |
-| Un retour est toujours accepté, sans pénalité | `Loan.markAsReturned` |
-| Un refus ne modifie aucune donnée | `UnitOfWorkInterface`, vérifications avant écritures |
+| Un retour est toujours accepté, sans pénalité ; un emprunt n'est clôturé qu'une fois | `Loan.markAsReturned` |
+| Un refus ne modifie aucune donnée | Toutes les vérifications précèdent les écritures dans chaque use case |
 
 ## Architecture
 
@@ -82,21 +82,19 @@ Les règles chiffrées sont centralisées dans `src/domain/rules/LoanRules.ts`.
 src/
 ├── domain/                      Modèle métier, sans dépendance technique
 │   ├── entities/                Agrégats : Member, BookCopy, Loan
-│   ├── value-objects/           MemberId, BookCopyId, LoanId, Email, FirstName, LastName, LoanReturn
+│   ├── value-objects/           MemberId, BookCopyId, LoanId, Email, LoanReturn
 │   ├── rules/                   Constantes et calculs métier
-│   ├── services/                LendingService : règles d'emprunt entre plusieurs agrégats
 │   ├── repositories/            Ports de persistance
 │   └── errors/                  Refus métier, tous dérivés de DomainError
 ├── application/                 Orchestration des use cases
-│   ├── ports/in/                Contrats des use cases : commande, résultat, erreurs
-│   ├── ports/out/               ClockInterface, UnitOfWorkInterface
+│   ├── ports/                   ClockInterface
 │   ├── dto/                     Résultats exposés : MemberDto, ActiveLoanDto, ReturnedLoanDto
-│   └── use-cases/               RegisterMember, BorrowBook, ReturnBook
+│   └── use-cases/               RegisterMember, BorrowBook, ReturnBook : commande, erreurs, orchestration
 └── infrastructure/              Adapters
-    ├── http/                    Routes Express et traduction des erreurs en statuts HTTP
-    ├── persistence/in-memory/   Repositories et UnitOfWork en mémoire
+    ├── http/                    Routes Express, validation des corps, normalizers snake_case, erreurs HTTP
+    ├── persistence/in-memory/   Repositories en mémoire
     ├── clock/                   SystemClock
-    ├── container.ts             Composition root
+    ├── container.ts             Composition root : instancie les adapters et les use cases
     └── server.ts                Point d'entrée
 ```
 
@@ -108,25 +106,25 @@ Chaque use case :
 
 - reçoit une commande en types primitifs ;
 - la convertit en value objects ;
-- s'exécute dans `UnitOfWorkInterface.run` ;
+- fait toutes ses vérifications avant d'écrire ;
 - renvoie un DTO, jamais une entité.
 
-| Use case | Contrat | Commande | Résultat | Erreurs, dans l'ordre de vérification |
-| --- | --- | --- | --- | --- |
-| `RegisterMember` | `RegisterMemberUseCase` | `email`, `lastName`, `firstName` | `MemberDto` | `InvalidEmailError`, `InvalidLastNameError`, `InvalidFirstNameError`, `EmailAlreadyExistsError` |
-| `BorrowBook` | `BorrowBookUseCase` | `memberId`, `copyId` | `ActiveLoanDto` | `InvalidIdentifierError`, `MemberNotFoundError`, `BookCopyNotFoundError`, `LoanLimitReachedError`, `BookCopyNotAvailableError` |
-| `ReturnBook` | `ReturnBookUseCase` | `copyId` | `ReturnedLoanDto` | `InvalidIdentifierError`, `BookCopyNotFoundError`, `NoActiveLoanError` |
-
-`ReturnBook` peut aussi propager `LoanAlreadyReturnedError` et `InvalidReturnDateError`, deux invariants de `Loan`. Ils ne se déclenchent pas dans un fonctionnement normal.
+| Use case | Commande | Résultat | Erreurs, dans l'ordre de vérification |
+| --- | --- | --- | --- |
+| `RegisterMember` | `email`, `lastName`, `firstName` | `MemberDto` | `InvalidEmailError`, `EmailAlreadyExistsError`, `InvalidLastNameError`, `InvalidFirstNameError` |
+| `BorrowBook` | `memberId`, `copyId` | `ActiveLoanDto` | `InvalidIdentifierError`, `MemberNotFoundError`, `BookCopyNotFoundError`, `LoanLimitReachedError`, `BookCopyNotAvailableError` |
+| `ReturnBook` | `copyId` | `ReturnedLoanDto` | `InvalidIdentifierError`, `BookCopyNotFoundError`, `NoActiveLoanError` |
 
 ## API HTTP
 
 | Méthode | Route | Corps JSON | Succès |
 | --- | --- | --- | --- |
 | `GET` | `/health` | | `200` |
-| `POST` | `/members` | `{ "email": string, "lastName": string, "firstName": string }` | `201` `MemberDto` |
-| `POST` | `/loans` | `{ "memberId": number, "copyId": number }` | `201` `ActiveLoanDto` |
-| `POST` | `/returns` | `{ "copyId": number }` | `200` `ReturnedLoanDto` |
+| `POST` | `/members` | `{ "email": string, "last_name": string, "first_name": string }` | `201` `MemberResponse` |
+| `POST` | `/loans` | `{ "member_id": number, "copy_id": number }` | `201` `ActiveLoanResponse` |
+| `POST` | `/returns` | `{ "copy_id": number }` | `200` `ReturnedLoanResponse` |
+
+Les champs JSON, en entrée comme en sortie, sont en `snake_case`. Les types de réponse sont définis dans `src/infrastructure/http/normalizers.ts`.
 
 Erreurs, au format `{ "error": string, "message": string }` :
 
@@ -134,11 +132,11 @@ Erreurs, au format `{ "error": string, "message": string }` :
 | --- | --- |
 | `400` | Corps mal formé, email, nom, prénom ou identifiant invalide |
 | `404` | Adhérent ou exemplaire inconnu |
-| `409` | Email déjà inscrit, exemplaire indisponible, aucun emprunt en cours, emprunt déjà rendu |
+| `409` | Email déjà inscrit, exemplaire indisponible, aucun emprunt en cours |
 | `422` | Limite d'emprunts atteinte, autre refus métier |
 | `500` | Erreur technique |
 
-La persistance est en mémoire. Les exemplaires `1` à `5` sont créés au démarrage, car aucun use case ne crée d'exemplaire.
+La persistance est en mémoire et démarre vide. Aucun use case ne crée d'exemplaire : pour tester un emprunt, enregistrer d'abord un `BookCopy` dans `InMemoryBookCopyRepository`.
 
 ## Démarrage
 

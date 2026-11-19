@@ -1,11 +1,17 @@
+import { LoanLimitReachedError } from "../errors/LoanLimitReachedError";
+import { MemberId } from "../value-objects/MemberId";
+
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export const MAX_ACTIVE_LOANS = 3;
 
 export const LOAN_DURATION_DAYS = 14;
 
-export function hasReachedActiveLoanLimit(activeLoanCount: number): boolean {
-  return activeLoanCount >= MAX_ACTIVE_LOANS;
+/** @throws LoanLimitReachedError */
+export function ensureActiveLoanLimitNotReached(memberId: MemberId, activeLoanCount: number): void {
+  if (activeLoanCount >= MAX_ACTIVE_LOANS) {
+    throw new LoanLimitReachedError(memberId, MAX_ACTIVE_LOANS);
+  }
 }
 
 export function computeDueDate(borrowedAt: Date): Date {

@@ -1,4 +1,4 @@
-import Member from "../../domain/entities/Member";
+import { Member } from "../../domain/entities/Member";
 
 export interface MemberDto {
   readonly id: number;
@@ -11,7 +11,7 @@ export function toMemberDto(member: Member): MemberDto {
   return {
     id: member.getId().toNumber(),
     email: member.getEmail().toString(),
-    lastName: member.getLastName().toString(),
-    firstName: member.getFirstName().toString(),
+    lastName: member.getLastName(),
+    firstName: member.getFirstName(),
   };
 }

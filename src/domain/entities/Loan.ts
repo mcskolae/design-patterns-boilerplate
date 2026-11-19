@@ -1,10 +1,9 @@
-import InvalidReturnDateError from "../errors/InvalidReturnDateError";
-import LoanAlreadyReturnedError from "../errors/LoanAlreadyReturnedError";
+import { LoanAlreadyReturnedError } from "../errors/LoanAlreadyReturnedError";
 import { computeDueDate } from "../rules/LoanRules";
-import BookCopyId from "../value-objects/BookCopyId";
-import LoanId from "../value-objects/LoanId";
-import LoanReturn from "../value-objects/LoanReturn";
-import MemberId from "../value-objects/MemberId";
+import { BookCopyId } from "../value-objects/BookCopyId";
+import { LoanId } from "../value-objects/LoanId";
+import { LoanReturn } from "../value-objects/LoanReturn";
+import { MemberId } from "../value-objects/MemberId";
 
 export interface LoanProps {
   readonly id: LoanId;
@@ -19,7 +18,7 @@ function copyDate(date: Date): Date {
   return new Date(date.getTime());
 }
 
-class Loan {
+export class Loan {
   private loanReturn: LoanReturn | null;
 
   private constructor(
@@ -48,26 +47,15 @@ class Loan {
     );
   }
 
-  /**
-   * @throws LoanAlreadyReturnedError
-   * @throws InvalidReturnDateError
-   */
+  /** @throws LoanAlreadyReturnedError */
   public markAsReturned(returnedAt: Date): LoanReturn {
     if (this.loanReturn !== null) {
       throw new LoanAlreadyReturnedError(this.id);
     }
 
-    if (returnedAt.getTime() < this.borrowedAt.getTime()) {
-      throw new InvalidReturnDateError(this.id);
-    }
-
     this.loanReturn = LoanReturn.record(returnedAt, this.dueAt);
 
     return this.loanReturn;
-  }
-
-  public isActive(): boolean {
-    return this.loanReturn === null;
   }
 
   public getId(): LoanId {
@@ -94,5 +82,3 @@ class Loan {
     return this.loanReturn;
   }
 }
-
-export default Loan;

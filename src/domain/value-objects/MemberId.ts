@@ -1,20 +1,16 @@
-import InvalidIdentifierError from "../errors/InvalidIdentifierError";
+import { InvalidIdentifierError } from "../errors/InvalidIdentifierError";
 
-class MemberId {
+export class MemberId {
   private constructor(private readonly value: number) {
   }
 
-  /** @throws InvalidIdentifierError si `value` n'est pas un entier strictement positif. */
+  /** @throws InvalidIdentifierError */
   public static from(value: number): MemberId {
     if (!Number.isInteger(value) || value <= 0) {
       throw new InvalidIdentifierError("MemberId", value);
     }
 
     return new MemberId(value);
-  }
-
-  public equals(other: MemberId): boolean {
-    return this.value === other.value;
   }
 
   public toNumber(): number {
@@ -25,5 +21,3 @@ class MemberId {
     return String(this.value);
   }
 }
-
-export default MemberId;

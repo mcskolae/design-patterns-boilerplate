@@ -1,16 +1,14 @@
-import Member from "../entities/Member";
-import Email from "../value-objects/Email";
-import MemberId from "../value-objects/MemberId";
+import { Member } from "../entities/Member";
+import { Email } from "../value-objects/Email";
+import { MemberId } from "../value-objects/MemberId";
 
-interface MemberRepositoryInterface {
+export interface MemberRepositoryInterface {
   nextIdentity(): Promise<MemberId>;
 
   findById(id: MemberId): Promise<Member | null>;
 
   findByEmail(email: Email): Promise<Member | null>;
 
-  /** @throws EmailAlreadyExistsError si un AUTRE adhérent possède déjà cet email (garde-fou en cas d'accès concurrent). */
+  /** @throws EmailAlreadyExistsError */
   save(member: Member): Promise<void>;
 }
-
-export default MemberRepositoryInterface;

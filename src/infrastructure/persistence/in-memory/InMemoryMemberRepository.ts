@@ -1,10 +1,8 @@
-import Member from "../../../domain/entities/Member";
-import EmailAlreadyExistsError from "../../../domain/errors/EmailAlreadyExistsError";
-import MemberRepositoryInterface from "../../../domain/repositories/MemberRepositoryInterface";
-import Email from "../../../domain/value-objects/Email";
-import FirstName from "../../../domain/value-objects/FirstName";
-import LastName from "../../../domain/value-objects/LastName";
-import MemberId from "../../../domain/value-objects/MemberId";
+import { Member } from "../../../domain/entities/Member";
+import { EmailAlreadyExistsError } from "../../../domain/errors/EmailAlreadyExistsError";
+import { MemberRepositoryInterface } from "../../../domain/repositories/MemberRepositoryInterface";
+import { Email } from "../../../domain/value-objects/Email";
+import { MemberId } from "../../../domain/value-objects/MemberId";
 
 interface MemberRecord {
   readonly id: number;
@@ -13,7 +11,7 @@ interface MemberRecord {
   readonly firstName: string;
 }
 
-class InMemoryMemberRepository implements MemberRepositoryInterface {
+export class InMemoryMemberRepository implements MemberRepositoryInterface {
   private readonly records = new Map<number, MemberRecord>();
   private lastId = 0;
 
@@ -55,8 +53,8 @@ class InMemoryMemberRepository implements MemberRepositoryInterface {
     return Member.restore({
       id: MemberId.from(record.id),
       email: Email.from(record.email),
-      lastName: LastName.from(record.lastName),
-      firstName: FirstName.from(record.firstName),
+      lastName: record.lastName,
+      firstName: record.firstName,
     });
   }
 
@@ -64,10 +62,8 @@ class InMemoryMemberRepository implements MemberRepositoryInterface {
     return {
       id: member.getId().toNumber(),
       email: member.getEmail().toString(),
-      lastName: member.getLastName().toString(),
-      firstName: member.getFirstName().toString(),
+      lastName: member.getLastName(),
+      firstName: member.getFirstName(),
     };
   }
 }
-
-export default InMemoryMemberRepository;

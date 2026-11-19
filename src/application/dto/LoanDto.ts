@@ -1,5 +1,5 @@
-import Loan from "../../domain/entities/Loan";
-import LoanReturn from "../../domain/value-objects/LoanReturn";
+import { Loan } from "../../domain/entities/Loan";
+import { LoanReturn } from "../../domain/value-objects/LoanReturn";
 
 interface LoanDtoBase {
   readonly id: number;

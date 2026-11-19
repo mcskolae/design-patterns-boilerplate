@@ -1,9 +1,7 @@
-import DomainError from "./DomainError";
+import { DomainError } from "./DomainError";
 
-class InvalidEmailError extends DomainError {
+export class InvalidEmailError extends DomainError {
   public constructor() {
     super("Invalid email.");
   }
 }
-
-export default InvalidEmailError;

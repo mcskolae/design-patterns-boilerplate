@@ -1,12 +1,12 @@
-import InvalidEmailError from "../errors/InvalidEmailError";
+import { InvalidEmailError } from "../errors/InvalidEmailError";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-class Email {
+export class Email {
   private constructor(private readonly value: string) {
   }
 
-  /** @throws InvalidEmailError si la forme normalisée ne respecte pas `local@domaine.extension`. */
+  /** @throws InvalidEmailError */
   public static from(raw: string): Email {
     const normalized = raw.trim().toLowerCase();
 
@@ -17,13 +17,7 @@ class Email {
     return new Email(normalized);
   }
 
-  public equals(other: Email): boolean {
-    return this.value === other.value;
-  }
-
   public toString(): string {
     return this.value;
   }
 }
-
-export default Email;

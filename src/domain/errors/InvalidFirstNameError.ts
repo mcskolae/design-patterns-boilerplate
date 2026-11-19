@@ -1,9 +1,7 @@
-import DomainError from "./DomainError";
+import { DomainError } from "./DomainError";
 
-class InvalidFirstNameError extends DomainError {
+export class InvalidFirstNameError extends DomainError {
   public constructor() {
     super("Invalid first name.");
   }
 }
-
-export default InvalidFirstNameError;

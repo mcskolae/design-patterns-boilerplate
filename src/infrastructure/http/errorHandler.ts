@@ -1,16 +1,22 @@
 import type { NextFunction, Request, Response } from "express";
-import BookCopyNotAvailableError from "../../domain/errors/BookCopyNotAvailableError";
-import BookCopyNotFoundError from "../../domain/errors/BookCopyNotFoundError";
-import DomainError from "../../domain/errors/DomainError";
-import EmailAlreadyExistsError from "../../domain/errors/EmailAlreadyExistsError";
-import InvalidEmailError from "../../domain/errors/InvalidEmailError";
-import InvalidFirstNameError from "../../domain/errors/InvalidFirstNameError";
-import InvalidIdentifierError from "../../domain/errors/InvalidIdentifierError";
-import InvalidLastNameError from "../../domain/errors/InvalidLastNameError";
-import LoanAlreadyReturnedError from "../../domain/errors/LoanAlreadyReturnedError";
-import MemberNotFoundError from "../../domain/errors/MemberNotFoundError";
-import NoActiveLoanError from "../../domain/errors/NoActiveLoanError";
-import BadRequestError from "./BadRequestError";
+import { BookCopyNotAvailableError } from "../../domain/errors/BookCopyNotAvailableError";
+import { BookCopyNotFoundError } from "../../domain/errors/BookCopyNotFoundError";
+import { DomainError } from "../../domain/errors/DomainError";
+import { EmailAlreadyExistsError } from "../../domain/errors/EmailAlreadyExistsError";
+import { InvalidEmailError } from "../../domain/errors/InvalidEmailError";
+import { InvalidFirstNameError } from "../../domain/errors/InvalidFirstNameError";
+import { InvalidIdentifierError } from "../../domain/errors/InvalidIdentifierError";
+import { InvalidLastNameError } from "../../domain/errors/InvalidLastNameError";
+import { LoanAlreadyReturnedError } from "../../domain/errors/LoanAlreadyReturnedError";
+import { MemberNotFoundError } from "../../domain/errors/MemberNotFoundError";
+import { NoActiveLoanError } from "../../domain/errors/NoActiveLoanError";
+
+export class BadRequestError extends Error {
+  public constructor(message: string) {
+    super(message);
+    this.name = "BadRequestError";
+  }
+}
 
 function statusOf(error: DomainError): number {
   if (
